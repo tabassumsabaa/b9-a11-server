@@ -46,7 +46,7 @@ async function run() {
        const query = {_id: new ObjectId(id)};
 
        const options = {
-        projection : {  title: 1, price: 1, service_id: 1, description: 1, img: 1}
+        projection : {  title: 1, price: 1,  description: 1, img: 1}
        }
 
        const result = await hairCollection.findOne(query, options);
@@ -65,7 +65,7 @@ async function run() {
        const query = {_id: new ObjectId(id)};
 
        const options = {
-        projection : {  title: 1, price: 1, servicef_id: 1, service_description: 1, img: 1}
+        projection : {  title: 1, price: 1,  service_description: 1, img: 1}
        }
 
        const result = await facialCollection.findOne(query, options);
@@ -84,7 +84,7 @@ async function run() {
         const query = {_id: new ObjectId(id)};
  
         const options = {
-         projection : {  title: 1, price: 1, provide_id: 1, provide_description: 1, img:1}
+         projection : {  title: 1, price: 1, provide_description: 1, img:1}
         }
  
         const result = await yogaCollection.findOne(query, options);
@@ -103,7 +103,7 @@ async function run() {
             const query = {_id: new ObjectId(id)};
      
             const options = {
-             projection : {  title: 1, price: 1, provide_id: 1, provide_description: 1, img: 1 }
+             projection : {  title: 1, price: 1,  provide_description: 1, img: 1 }
             }
      
             const result = await gymCollection.findOne(query, options);
@@ -121,12 +121,52 @@ async function run() {
             const result = await bookingCollection.find().toArray();
             res.send(result);            
         })
+
+        app.get('/bookings/:id', async(req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id)};
+            const result = await bookingCollection.findOne(query);
+            res.send(result);
+        })
+
         app.post("/bookings", async(req, res) =>{
             const booking = req.body;
             console.log(booking);
             const result = await bookingCollection.insertOne(booking);
             res.send(result);
+        })       
+
+        app.put("/bookings/:id", async(req, res) =>{
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id)}
+            const options = { upsert: true };
+            const updated = req.body;
+            const updatedService = {
+                $set: {
+                    CustomerName: updated.CustomerName, 
+                    Price: updated.Price, 
+                    email: updated.email,
+                    date: updated.date,
+                    title: updated.title
+                }
+            }
+            const result = await bookingCollection.updateOne(filter, updatedService, options);
+            res.send(result);
         })
+     
+        app.patch('/bookings/:id', async(req, res) =>{
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id)};           
+            const confirmBooking = req.body;
+            console.log(confirmBooking);
+            const confirmDoc ={
+                $set:{
+                    status: confirmBooking.status
+                }
+            }
+            const result = await bookingCollection.updateOne(filter, confirmDoc);
+            res.send(result);
+        })          
 
         app.delete("/bookings/:id", async(req, res) =>{
             const id = req.params.id;
