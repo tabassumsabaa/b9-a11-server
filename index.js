@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
@@ -7,8 +9,12 @@ const port = process.env.PORT || 5000;
 
 
 // middleware
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 console.log(process.env.DB_PASS);
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ppdndxv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -22,6 +28,26 @@ const client = new MongoClient(uri, {
   }
 });
 
+const verifyToken = async(req, res, next) => {
+    const token = req.cookies?.token;
+    console.log('value of token in middleware', token);
+    if (!token) {
+       return res.status(401).send({message: 'unauthoriised'})    
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
+      //error
+      if (err) {
+        console.log(err);
+        return res.status(401).send({message: 'unauthoriised'}) 
+      }
+      //if token is valied then it would be decoded
+      console.log('value in the token', decoded);
+      req.user= decoded;
+      next();
+    })
+    
+  }
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -32,6 +58,21 @@ async function run() {
    const yogaCollection = client.db('fitZone').collection('yogaServices');
    const gymCollection = client.db('fitZone').collection('gymservices');
    const bookingCollection = client.db('fitZone').collection('bookings');
+
+
+   // auth related api
+   app.post('/jwt', async(req, res) =>{
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign( user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
+      res
+      .cookie('token', token, {
+         httpOnly: true,
+         secure: false,
+         sameSite: 'strict'
+      })
+      .send({success: true});
+   })
 
 
    // for hair
@@ -112,8 +153,9 @@ async function run() {
 
         // bookings
 
-        app.get('/bookings', async(req, res) =>{
+        app.get('/bookings',  async(req, res) =>{
             console.log(req.query.email);
+            console.log('tokennn', req.cookies?.token);
             let query = {};
             if (req.query?.email) {
                 query = {email: req.query.email}                
