@@ -28,6 +28,12 @@ const client = new MongoClient(uri, {
   }
 });
 
+  // middleware make
+  const logger = async(req, res, next) =>{
+    console.log('logging called: ', req.host, req.originalUrl);
+    next();
+ }
+ 
 const verifyToken = async(req, res, next) => {
     const token = req.cookies?.token;
     console.log('value of token in middleware', token);
@@ -61,9 +67,9 @@ async function run() {
 
 
    // auth related api
-   app.post('/jwt', async(req, res) =>{
+   app.post('/jwt', logger, async(req, res) =>{
       const user = req.body;
-      console.log(user);
+      console.log('user for token', user);
       const token = jwt.sign( user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
       res
       .cookie('token', token, {
@@ -71,10 +77,17 @@ async function run() {
          secure: false,
          sameSite: 'strict'
       })
-      .send({success: true});
+         .send({success: true});
    })
 
+   app.post('/logout', async(req, res) =>{
+       const user = req.body;
+       console.log('logout', user);
+       res.clearCookie('token', {maxAge: 0}).send({success: true});
+       
+   })
 
+   //All service apis
    // for hair
    app.get('/hairservices', async(req, res) =>{
        const cursor = hairCollection.find();
@@ -153,9 +166,10 @@ async function run() {
 
         // bookings
 
-        app.get('/bookings',  async(req, res) =>{
+        app.get('/bookings', logger, verifyToken,  async(req, res) =>{
             console.log(req.query.email);
-            console.log('tokennn', req.cookies?.token);
+           // console.log('tokennn', req.cookies?.token);
+           console.log('user in valid token', req.user);
             let query = {};
             if (req.query?.email) {
                 query = {email: req.query.email}                
