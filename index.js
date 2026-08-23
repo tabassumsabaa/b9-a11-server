@@ -10,7 +10,8 @@ const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://b9a11-client-side-54051.web.app', 'https://b9a11-client-side-54051.firebaseapp.com'],
+    origin: ['http://localhost:5173', 'https://b9a11-client-side-54051.web.app', 'https://b9a11-client-side-54051.firebaseapp.com', 'https://sabfitzone.web.app'],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true
 }));
 app.use(express.json());
