@@ -16,7 +16,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-console.log(process.env.DB_PASS);
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ppdndxv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -33,25 +32,25 @@ const client = new MongoClient(uri, {
     console.log('logging called: ', req.host, req.originalUrl);
     next();
  }
- 
+
 const verifyToken = async(req, res, next) => {
     const token = req.cookies?.token;
     console.log('value of token in middleware', token);
     if (!token) {
-       return res.status(401).send({message: 'unauthoriised'})    
+       return res.status(401).send({message: 'unauthoriised'})
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
       //error
       if (err) {
         console.log(err);
-        return res.status(401).send({message: 'unauthoriised'}) 
+        return res.status(401).send({message: 'unauthoriised'})
       }
       //if token is valied then it would be decoded
       console.log('value in the token', decoded);
       req.user= decoded;
       next();
     })
-    
+
   }
 
   const cookieOption = {
@@ -84,7 +83,7 @@ async function run() {
        const user = req.body;
        console.log('logout', user);
        res.clearCookie('token', { ...cookieOption, maxAge: 0}).send({success: true});
-       
+
    })
 
    //All service apis
@@ -132,15 +131,15 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result);
     })
- 
+
     app.get('/yogaServices/:id', async(req,res) =>{
         const id = req.params.id;
         const query = {_id: new ObjectId(id)};
- 
+
         const options = {
          projection : {  title: 1, price: 1, provide_description: 1, img:1}
         }
- 
+
         const result = await yogaCollection.findOne(query, options);
         res.send(result);
     })
@@ -151,15 +150,15 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         })
-     
+
         app.get('/gymservices/:id', async(req,res) =>{
             const id = req.params.id;
             const query = {_id: new ObjectId(id)};
-     
+
             const options = {
              projection : {  title: 1, price: 1,  provide_description: 1, img: 1 }
             }
-     
+
             const result = await gymCollection.findOne(query, options);
             res.send(result);
         })
@@ -172,10 +171,10 @@ async function run() {
            console.log('user in valid token', req.user);
             let query = {};
             if (req.query?.email) {
-                query = {email: req.query.email}                
+                query = {email: req.query.email}
             }
             const result = await bookingCollection.find().toArray();
-            res.send(result);            
+            res.send(result);
         })
 
         app.get('/bookings/:id', async(req, res) => {
@@ -190,7 +189,7 @@ async function run() {
             console.log(booking);
             const result = await bookingCollection.insertOne(booking);
             res.send(result);
-        })       
+        })
 
         app.put("/bookings/:id", async(req, res) =>{
             const id = req.params.id;
@@ -199,8 +198,8 @@ async function run() {
             const updated = req.body;
             const updatedService = {
                 $set: {
-                    CustomerName: updated.CustomerName, 
-                    Price: updated.Price, 
+                    CustomerName: updated.CustomerName,
+                    Price: updated.Price,
                     email: updated.email,
                     date: updated.date,
                     title: updated.title
@@ -209,10 +208,10 @@ async function run() {
             const result = await bookingCollection.updateOne(filter, updatedService, options);
             res.send(result);
         })
-     
+
         app.patch('/bookings/:id', async(req, res) =>{
             const id = req.params.id;
-            const filter = { _id: new ObjectId(id)};           
+            const filter = { _id: new ObjectId(id)};
             const confirmBooking = req.body;
             console.log(confirmBooking);
             const confirmDoc ={
@@ -222,7 +221,7 @@ async function run() {
             }
             const result = await bookingCollection.updateOne(filter, confirmDoc);
             res.send(result);
-        })          
+        })
 
         app.delete("/bookings/:id", async(req, res) =>{
             const id = req.params.id;
